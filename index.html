@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Scraper</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<!--The elements of the web page and the design with Tailwind-->
+<body class="bg-gray-100 h-screen flex flex-col justify-center items-center">
+  <div class="bg-gray-400 p-6 rounded-lg shadow w-full max-w-xl">
+    <h1 class="text-4xl font-bold text-center mb-6">Web Scraper</h1>
+    <form id="scrapeForm">
+      <input type="text" id="url" class="w-full p-3 border rounded-full shadow text-xl" placeholder="https://wsa-test.vercel.app/">
+      <button id="scrapeButton" class="bg-blue-200 text-black p-3 rounded-full w-full mt-4 text-xl">Scrape and Analyze</button>
+    </form>
+    <h2 class="text-3xl font-bold text-center mt-6 mb-4">Results</h2>
+    <pre id="results" class="p-4 border rounded-2xl bg-gray-200 h-96 flex-grow text-sm overflow-y-scroll whitespace-pre-wrap"></pre>
+    <button id="saveButton" class="bg-green-200 text-black p-3 rounded-full w-full mt-4 text-xl" disabled>Save Results</button>
+  </div>
+<!--The script for linking the front end to the back end-->
+  <script>
+    const scrapeForm = document.getElementById('scrapeForm');
+    const urlInput = document.getElementById('url');
+    const results = document.getElementById('results');
+    const scrapeButton = document.getElementById('scrapeButton');
+    const saveButton = document.getElementById('saveButton');
+
+    let dataFetched = false;
+
+    //function to fetch data from the API
+    const fetchData = async () => {
+      const url = urlInput.value;
+      try {
+        const response = await fetch('/scrape', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({url}),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          //display data in the results div as JSON-like text
+          results.textContent = JSON.stringify(data, null, 2);
+          dataFetched = true;
+          saveButton.removeAttribute('disabled');
+        } 
+        else {
+          results.textContent = 'Error fetching data!';
+        }
+      } catch (error) {
+        results.textContent = 'An error occurred while fetching data!';
+      }
+    };
+
+    // Function to save results as a txt file
+    const saveResults = () => {
+      if (dataFetched) {
+        const resultsText = results.textContent;
+        const blob = new Blob([resultsText], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'results.txt';
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } 
+      else {
+        alert('Click "Scrape and Analyze" before saving!');
+      }
+    };
+
+    //add event listeners
+    scrapeForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      fetchData();
+    });
+
+    //enable the scrape button and the save button on page load
+    scrapeButton.addEventListener('click', fetchData);
+    saveButton.addEventListener('click', saveResults);
+  </script>
+</body>
+</html>
